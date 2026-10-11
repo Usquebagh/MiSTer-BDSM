@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "id": "cinematronics",
+  "version": "0.1.0",
+  "source_roots": [
+    "rtl",
+    "sim",
+    "tools",
+    "sys",
+    "assets",
+    "LICENSES",
+    "docs"
+  ],
+  "source_files": [
+    "Arcade-Cinematronics.sv",
+    "Arcade-Cinematronics.qpf",
+    "Arcade-Cinematronics.qsf",
+    "Arcade-Cinematronics.sdc",
+    "files.qip",
+    "build.sh",
+    "build_id.v",
+    "releases/Star Castle (version 3).mra",
+    "releases/Rip Off.mra",
+    "releases/Armor Attack.mra"
+  ],
+  "required_files": [
+    "rtl/games/cinemat_machine.sv",
+    "rtl/games/cinemat_rom.sv",
+    "rtl/vector/vector_line.sv",
+    "rtl/sound/starcastle_sound.sv",
+    "releases/Star Castle (version 3).mra",
+    "releases/Rip Off.mra",
+    "releases/Armor Attack.mra"
+  ],
+  "games": [
+    "Star Castle v3",
+    "Rip Off",
+    "Armor Attack"
+  ],
+  "limitations": [
+    "Machine simulation drives 50 MHz directly; PLL, HPS, DDR and physical I/O are excluded.",
+    "Verilator is predominantly two-state; CDC, power-up X/Z and analog behaviour are not validated.",
+    "CPU expectations include pinned MAME compatibility, not proof of board accuracy.",
+    "Audio numerical/command tests do not establish analog sound fidelity.",
+    "Game-ROM audio activity is smoke coverage only; independently calibrated per-game references are absent."
+  ],
+  "checks": [
+    {
+      "id": "cinematronics.rtl.lint",
+      "suite": "lint",
+      "mode": "lint",
+      "required": true,
+      "tools": [
+        "verilator"
+      ],
+      "timeout": 120,
+      "expectation": "Full machine-boundary -Wall lint has no unreviewed warnings; no blanket suppressions in this check.",
+      "reference": "Verilator diagnostics; warnings require individual review before candidate qualification."
+    },
+    {
+      "id": "cinematronics.machine.reset_progress",
+      "suite": "smoke",
+      "mode": "machine",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 240,
+      "expectation": "Loading blocks retirement; framebuffer startup completes within 200000 clocks; synthetic ROM retires instructions and accepts vectors.",
+      "reference": "Core loader/framebuffer contract; synthetic opcode sequence from existing pinned-MAME checked machine fixture."
+    },
+    {
+      "id": "cinematronics.rom.mapping",
+      "suite": "smoke",
+      "mode": "rom",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 120,
+      "expectation": "8 KiB banks mirror logical 0/1 and 2/3; Armor Attack uses a linear 16 KiB map, with one-clock reads.",
+      "reference": "docs/architecture.md; pinned Cinematronics MAME memory map. Synthetic pattern distinguishes every bank."
+    },
+    {
+      "id": "cinematronics.vector.endpoints",
+      "suite": "smoke",
+      "mode": "vector",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 120,
+      "expectation": "Native (4,6)-(12,6) emits inclusive pixels (2,3)..(6,3); backpressure preserves a pending pixel.",
+      "reference": "Declared half-resolution inclusive Bresenham raster contract; explicit horizontal line geometry."
+    },
+    {
+      "id": "cinematronics.audio.commands_cadence",
+      "suite": "audio",
+      "mode": "audio",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 120,
+      "expectation": "MSB-first serial load/latch isolation; exactly 4800 enables in 2500000 clocks at 50 MHz, gaps 520/521.",
+      "reference": "Star Castle LS164/LS377 wiring recorded in docs/sound.md; declared 96 kHz implementation contract."
+    },
+    {
+      "id": "cinematronics.audio.starcastle_regression",
+      "suite": "audio",
+      "script": "sim/run_sound.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 300,
+      "markers": [
+        "PASS: all 256 serial commands",
+        "PASS: short explosion, simultaneous voices",
+        "PASS: 50 MHz -> exact-average 96 kHz"
+      ],
+      "expectation": "Existing directed sound suite, including settled short-trigger regression.",
+      "reference": "Existing schematic-informed sound tests; RMS floors are regression/audibility thresholds, not board calibration.",
+      "audio_artifacts": [
+        "build/sound/laser.wav",
+        "build/sound/soft-explosion.wav",
+        "build/sound/loud-explosion.wav",
+        "build/sound/fireball.wav",
+        "build/sound/shield.wav",
+        "build/sound/thrust.wav",
+        "build/sound/star.wav",
+        "build/sound/background.wav"
+      ]
+    },
+    {
+      "id": "cinematronics.audio.ripoff_regression",
+      "suite": "audio",
+      "script": "sim/run_ripoff_sound.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 300,
+      "markers": [
+        "PASS:"
+      ],
+      "expectation": "Existing Rip Off directed sound suite.",
+      "reference": "Core-specific synthetic regression expectations.",
+      "audio_artifacts": [
+        "build/sound/ripoff-explosion.wav",
+        "build/sound/ripoff-laser.wav",
+        "build/sound/ripoff-torpedo.wav",
+        "build/sound/ripoff-beep.wav",
+        "build/sound/ripoff-motor.wav",
+        "build/sound/ripoff-background.wav"
+      ]
+    },
+    {
+      "id": "cinematronics.audio.armora_regression",
+      "suite": "audio",
+      "script": "sim/run_armora_sound.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "make",
+        "g++"
+      ],
+      "timeout": 300,
+      "markers": [
+        "PASS:"
+      ],
+      "expectation": "Existing Armor Attack directed sound suite.",
+      "reference": "Core-specific synthetic regression expectations; relative levels are not board calibration.",
+      "audio_artifacts": [
+        "build/sound/armora-tank-fire.wav",
+        "build/sound/armora-high-explosion.wav",
+        "build/sound/armora-jeep-fire.wav",
+        "build/sound/armora-low-explosion.wav",
+        "build/sound/armora-chopper.wav",
+        "build/sound/armora-beep.wav",
+        "build/sound/armora-tank-motor-treads.wav"
+      ]
+    },
+    {
+      "id": "cinematronics.machine.regression",
+      "suite": "regression",
+      "script": "sim/run_machine.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "iverilog",
+        "vvp",
+        "make",
+        "g++"
+      ],
+      "timeout": 300,
+      "markers": [
+        "PASS: live synthetic machine",
+        "PASS: machine watchdog resets on third frame"
+      ],
+      "expectation": "Existing connected synthetic CPU/video/input/watchdog suite.",
+      "reference": "Pinned MAME instruction oracle and independent integer rasterizer."
+    },
+    {
+      "id": "cinematronics.game.starcastle",
+      "suite": "game",
+      "game": "starcastle",
+      "rom": "starcas.zip",
+      "prepare": "prepare_starcastle.py",
+      "script": "sim/run_machine.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "iverilog",
+        "vvp",
+        "make",
+        "g++"
+      ],
+      "timeout": 600,
+      "markers": [
+        "PASS: Star Castle live machine"
+      ],
+      "expectation": "Local validated ROM drives reference-checked machine scenario.",
+      "reference": "Pinned MAME compatibility and existing scripted scenario."
+    },
+    {
+      "id": "cinematronics.game.ripoff",
+      "suite": "game",
+      "game": "ripoff",
+      "rom": "ripoff.zip",
+      "prepare": "prepare_ripoff.py",
+      "script": "sim/run_ripoff.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "iverilog",
+        "vvp",
+        "yosys",
+        "make",
+        "g++"
+      ],
+      "timeout": 900,
+      "markers": [
+        "PASS: Rip Off live machine"
+      ],
+      "expectation": "Local validated ROM drives reference-checked two-player input scenario.",
+      "reference": "Pinned MAME compatibility and existing scripted scenario."
+    },
+    {
+      "id": "cinematronics.game.armora",
+      "suite": "game",
+      "game": "armora",
+      "rom": "armora.zip",
+      "prepare": "prepare_armora.py",
+      "script": "sim/run_armora.sh",
+      "required": true,
+      "tools": [
+        "verilator",
+        "iverilog",
+        "vvp",
+        "make",
+        "g++"
+      ],
+      "timeout": 900,
+      "markers": [
+        "PASS: Armor Attack live machine"
+      ],
+      "expectation": "Local validated 16 KiB ROM drives reference-checked gameplay and diagnostics.",
+      "reference": "Pinned MAME compatibility and existing scripted scenario."
+    },
+    {
+      "id": "cinematronics.audio.reference_coverage",
+      "suite": "reference",
+      "required": true,
+      "skip_reason": "Independent calibrated sound references and complete per-game event/channel coverage are not supplied.",
+      "expectation": "Each required voice/event has independently justified timing and numerical/fidelity expectations.",
+      "reference": "Not available."
+    },
+    {
+      "id": "cinematronics.constraints.review",
+      "suite": "reference",
+      "required": true,
+      "skip_reason": "External I/O constraint omissions and audio multicycle endpoint safety have not been independently reviewed.",
+      "expectation": "Every relevant path is constrained or has a reviewed specific exclusion; multicycle endpoints share the intended enable.",
+      "reference": "Pending TimeQuest path/exception review and enable evidence."
+    }
+  ],
+  "mutations": [
+    {
+      "id": "held_reset",
+      "check": "cinematronics.machine.reset_progress",
+      "file": "rtl/games/cinemat_machine.sv",
+      "old": "wire hard_reset = reset || load_active || !rom_loaded;",
+      "new": "wire hard_reset = 1'b1;",
+      "failure_label": "startup_deadline",
+      "reason": "Loaded code can never execute."
+    },
+    {
+      "id": "wrong_rom_bank",
+      "check": "cinematronics.rom.mapping",
+      "file": "rtl/games/cinemat_rom.sv",
+      "old": "{1'b0,cpu_addr[13],cpu_addr[11:0]}",
+      "new": "{1'b0,cpu_addr[12:0]}",
+      "failure_label": "rom_byte",
+      "reason": "8 KiB programs read the wrong logical bank."
+    },
+    {
+      "id": "shifted_vector_endpoint",
+      "check": "cinematronics.vector.endpoints",
+      "file": "rtl/vector/vector_line.sv",
+      "old": "tx <= end_x; ty <= end_y;",
+      "new": "tx <= end_x + 17'sd1; ty <= end_y;",
+      "failure_label": "pixel_count",
+      "reason": "A line draws an extra endpoint pixel."
+    },
+    {
+      "id": "wrong_audio_rate",
+      "check": "cinematronics.audio.commands_cadence",
+      "file": "rtl/sound/starcastle_sound.sv",
+      "old": "sample_phase + 27'd96000",
+      "new": "sample_phase + 27'd95000",
+      "failure_label": "sample_interval",
+      "reason": "Audio cadence drifts and changes timing/pitch."
+    }
+  ],
+  "build": {
+    "command": [
+      "bash",
+      "build.sh"
+    ],
+    "artifact": "output_files/Arcade-Cinematronics.rbf",
+    "project": "Arcade-Cinematronics",
+    "revision": "Arcade-Cinematronics",
+    "top": "sys_top",
+    "device": "5CSEBA6U23I7",
+    "image": "theypsilon/quartus-lite-c5:17.0.2",
+    "timeout": 3600
+  }
+}

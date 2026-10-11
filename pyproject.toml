@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mister-bdsm"
+version = "0.1.0"
+description = "Build Diagnostics, Simulation and Mutation-testing for MiSTer RTL"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[project.scripts]
+mister-bdsm = "runner.cli:main"
+
+[tool.setuptools]
+packages = ["runner"]
+
+[tool.setuptools.data-files]
+"share/mister-bdsm/adapters/cinematronics" = ["adapters/cinematronics/adapter.json", "adapters/cinematronics/check.py", "adapters/cinematronics/common.hpp", "adapters/cinematronics/machine.cpp", "adapters/cinematronics/rom.cpp", "adapters/cinematronics/vector.cpp", "adapters/cinematronics/audio.cpp"]

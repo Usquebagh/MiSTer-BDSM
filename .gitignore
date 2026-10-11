@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+results/
+*.egg-info/
+*.vcd
+*.fst
+*.wav
+*.pcm
+*.bin
+*.zip
+local.json
